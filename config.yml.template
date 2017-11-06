@@ -30,7 +30,7 @@ PARTICIPANTS:
       - Bill
 
 # From address should be the organizer in case participants have any questions
-FROM: Secret Santa <secret-santa@azriel.net>
+FROM: secret-santa@gmail.net
 
 # Both SUBJECT and MESSAGE can include variable substitution for the
 # "santa" and "santee" as well "wish_list"
