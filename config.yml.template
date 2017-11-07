@@ -3,40 +3,50 @@
 SMTP_SERVER: smtp.gmail.com
 SMTP_PORT: 587
 USERNAME: you@gmail.com
-PASSWORD: "you're-password"
+PASSWORD: "your-password"
 
-TIMEZONE: 'US/Pacific'
+TIMEZONE: 'US/Eastern'
 
 PARTICIPANTS:
-  - Chad <chad@somewhere.net>
-  - Jen <jen@gmail.net>
-  - Bill <Bill@somedomain.net>
-  - Sharon <Sharon@hi.org>
-
-
-# Warning -- if you mess this up you could get an infinite loop
-DONT-PAIR:
-  - Chad, Jen    # Chad and Jen are married
-  - Chad, Bill   # Chad and Bill are best friends
-  - Bill, Sharon
+  - name: Chad
+    email: chad@somewhere.net
+    wish_list: amazon.com/something/sommething
+    dont_pair:
+    - Jen
+  - name: Jen
+    email: jen@gmail.net
+    wish_list: amazon.com/something/sommething
+    dont_pair:
+      - Chad
+  - name: Bill
+    email: Bill@somedomain.net
+    wish_list: amazon.com/something/sommething
+    dont_pair:
+      - Chad
+  - name: Sharon
+    email: Sharon@hi.org
+    wish_list: amazon.com/something/sommething
+    dont_pair:
+      - Bill
 
 # From address should be the organizer in case participants have any questions
-FROM: You <you@gmail.net>
+FROM: secret-santa@gmail.net
 
-# Both SUBJECT and MESSAGE can include variable substitution for the 
-# "santa" and "santee"
+# Both SUBJECT and MESSAGE can include variable substitution for the
+# "santa" and "santee" as well "wish_list"
 SUBJECT: Your secret santa recipient is {santee}
-MESSAGE: 
-  Dear {santa},
-  
-  This year you are {santee}'s Secret Santa!. Ho Ho Ho!
-  
-  The maximum spending limit is 50.00
-  
-  
-  This message was automagically generated from a computer. 
-  
-  Nothing could possibly go wrong...
-  
-  http://github.com/underbluewaters/secret-santa
-  
+MESSAGE: "Dear {santa},
+
+
+This year you are {santee}'s Secret Santa!. Ho Ho Ho!
+
+
+The maximum spending limit is 50.00
+
+
+Provided wish list information:
+
+
+    {wish_list}
+
+"
