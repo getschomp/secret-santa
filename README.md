@@ -93,7 +93,7 @@ Here is the example configuration unchanged:
 
 ## Usage
 
-<details><code>./secret_santa.py -h</code>
+<details><summary><code>./secret_santa.py -h</code></summary>
 
     usage: secret_santa.py [-h] [-l {debug,info,warning,error,critical}] [-f] [-s]
 
