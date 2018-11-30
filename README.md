@@ -1,24 +1,33 @@
-Intro
-=====
+**Last Updated: 2018-11-24 10:48 @matthew-cox**
+
+Table of Contents
+=================
+  * [secret-santa](#secret-santa)
+    * [Dependencies](#dependencies)
+    * [Configuration](#configuration)
+    * [Usage](#usage)
+
+# secret-santa
 
 **secret-santa** can help you manage a list of secret santa participants by
 randomly assigning pairings and sending emails. It can avoid pairing
 couples to their significant other, and allows custom email messages to be
 specified.
 
-Dependencies
-------------
+## Dependencies
+
+Python 3
 
 Non-core dependencies:
 
+* PyYAML
 * pytz
 
 To installed the needed dependencies:
 
     pip install -r ./requirements.txt
 
-Usage
------
+## Configuration
 
 Copy config.yml.template to config.yml and enter in the connection details
 for your outgoing mail server. Modify the participants and couples lists and
@@ -41,22 +50,22 @@ Here is the example configuration unchanged:
     PARTICIPANTS:
       - name: Chad
         email: chad@somewhere.net
-        wish_list: amazon.com/something/sommething
+        wish_list: amazon.com/something/something
         dont_pair:
         - Jen
       - name: Jen
         email: jen@gmail.net
-        wish_list: amazon.com/something/sommething
+        wish_list: amazon.com/something/something
         dont_pair:
           - Chad
       - name: Bill
         email: Bill@somedomain.net
-        wish_list: amazon.com/something/sommething
+        wish_list: amazon.com/something/something
         dont_pair:
           - Chad
       - name: Sharon
         email: Sharon@hi.org
-        wish_list: amazon.com/something/sommething
+        wish_list: amazon.com/something/something
         dont_pair:
           - Bill
 
@@ -72,7 +81,7 @@ Here is the example configuration unchanged:
     This year you are {santee}'s Secret Santa!. Ho Ho Ho!
 
 
-    The maximum spending limit is 50.00
+    The maximum spending limit is $50.00
 
 
     Provided wish list information:
@@ -82,15 +91,33 @@ Here is the example configuration unchanged:
 
     "
 
+## Usage
+
+<details><code>./secret_santa.py -h</code>
+
+    usage: secret_santa.py [-h] [-l {debug,info,warning,error,critical}] [-f] [-s]
+
+    To use, fill out config.yml with your own participants. You can also specify DONT-PAIR so that people don't get assigned their significant other. You'll also need to specify
+    your mail server settings. An example is provided for routing mail through gmail. For more information, see README.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -l {debug,info,warning,error,critical}, --log-level {debug,info,warning,error,critical}
+                            Logging verbosity. Default: WARNING
+      -f, --fake
+      -s, --send
+
+</details><br />
+
 Once configured, call secret-santa:
 
     $ ./secret_santa.py
 
-Calling secret-santa without arguments will output a test pairing of
-participants.
+Calling secret-santa without arguments will output a test pairing of participants:
 
         Test pairings:
 
+        🎅          🎁
         Chad   ---> Bill
         Jen    ---> Sharon
         Bill   ---> Chad
