@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf8 -*-
 #
 '''
@@ -13,29 +13,28 @@ from __future__ import print_function
 #
 import argparse
 import datetime
+from email.mime.text import MIMEText
 import json
 import logging
-import os
+try:
+    from pathlib import Path
+except ModuleNotFoundError:
+    # Python 2.x? Add pathlib2 to your requirements.txt
+    from pathlib2 import Path
 import random
 import smtplib
 import socket
-import sys
 import time
 #
 # Non-standard imports
 #
 import pytz
 import yaml
-#
-# You might need this to better handle utf8 characters
-# https://stackoverflow.com/questions/21129020/how-to-fix-unicodedecodeerror-ascii-codec-cant-decode-byte#21190382
-reload(sys)
-# pylint: disable=no-member
-sys.setdefaultencoding('utf8')
+
 #
 # Ensure . is in the lib path for local includes
 #
-sys.path.append(os.path.realpath('.'))
+LIB_PATH = Path(__file__).resolve().parent
 # pylint: disable=wrong-import-position
 ### local directory imports here
 from SecretSanta import Person, Pair
@@ -70,23 +69,19 @@ REQUIRED = (
     'MESSAGE',
 )
 
-HEADER = """Date: {date}
-Content-Type: text/plain; charset="utf-8"
-Message-Id: {message_id}
-From: {frm}
-To: {to}
-Subject: {subject}
-
-"""
-
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.yml')
+CONFIG_PATH = str(Path(__file__).resolve().parent / 'config.yml')
 #
 ##############################################################################
 #
 # _json_dump() - Little output to DRY
 #
 def _json_dump(the_thing, pretty=False):
-    '''_json_dump() - Little output to DRY'''
+    '''
+    Reusable JSON dumping code
+
+    Returns:
+        str: JSON string representation suitable for print'ing
+    '''
     output = None
     if pretty:
         output = json.dumps(the_thing, sort_keys=True, indent=4,
@@ -94,14 +89,23 @@ def _json_dump(the_thing, pretty=False):
     else:
         output = json.dumps(the_thing)
     return output
+
+
 #
 ##############################################################################
 #
 # _get_logger() - reuable code to get the correct logger by name
 #
 def _get_logger():
-    '''_get_logger() - reuable code to get the correct logger by name'''
-    return logging.getLogger(os.path.basename(__file__))
+    '''
+    Reusable code to get the correct logger by name of current file
+
+    Returns:
+        logging.logger: Instance of logger for name of current file
+    '''
+    return logging.getLogger(Path(__file__).resolve().name)
+
+
 #
 ##############################################################################
 #
@@ -110,6 +114,8 @@ def _get_logger():
 def parse_yaml(yaml_path=CONFIG_PATH):
     '''parse_yaml() - load the config file'''
     return yaml.safe_load(open(yaml_path, 'rb'))
+
+
 #
 ##############################################################################
 #
@@ -129,6 +135,7 @@ def create_pairs(old_givers=None, old_recievers=None):
 
         # randomize the array of givers, otherwise config position can limit
         random.shuffle(givers)
+        random.shuffle(givers)
         for giver in givers:
             logger.info("Finding match for %s", giver)
             try:
@@ -136,13 +143,15 @@ def create_pairs(old_givers=None, old_recievers=None):
                 recievers.remove(reciever)
                 pairs.append(Pair(giver, reciever))
             # pylint: disable=broad-except
-            except Exception as (err):
+            except Exception as err:
                 logger.info("Exception '%s', RESTART", err)
                 pairs = None
                 raise RuntimeError("Restarting the search")
                 # NOTE: recursing here was causing issues
                 # return create_pairs(old_givers, old_recievers)
     return pairs
+
+
 #
 ##############################################################################
 #
@@ -156,6 +165,7 @@ def pairs_summary(pairs=None):
         message = """
 Test pairings:
 
+🎅                      🎁
 %s
 
 To send out emails with new pairings,
@@ -163,8 +173,10 @@ call with the --send argument:
 
     $ ./secret_santa.py --send
 
-        """ % ("\n".join([str(pair) for pair in sorted(pairs, key=lambda x: x.getKey())]))
+        """ % ("\n".join([str(pair) for pair in sorted(pairs, key=lambda x: x.get_key())]))
         print(message)
+
+
 #
 ##############################################################################
 #
@@ -197,25 +209,60 @@ def send_emails(config=None, pairs=None, fake=True):
 
             subject = config['SUBJECT'].format(santa=pair.giver.name,
                                                santee=pair.reciever.name)
-            header = HEADER.format(date=date,
-                                   message_id=message_id,
-                                   frm=config['FROM'],
-                                   to=pair.giver.email,
-                                   subject=subject,
-                                  )
 
-            body = header + pair.generate_email(message=config['MESSAGE'])
+            mesg = MIMEText(
+                pair.generate_email(message=config['MESSAGE']).encode('utf-8'),
+                _charset='utf-8'
+            )
+
+            mesg['Date'] = date
+            mesg['Message-Id'] = message_id
+            mesg['From'] = '"{name}" <{email}>'.format(name="Secret Santa", email=config['FROM'])
+            mesg['To'] = '"{name}" <{email}>'.format(name=pair.giver.name, email=pair.giver.email)
+            mesg['Subject'] = subject
 
             if not fake:
                 logger.info("Sending email to: '%s'...", pair.giver.email)
-                result = server.sendmail(config['FROM'], [pair.giver.email], body)
+                result = server.sendmail(config['FROM'], [pair.giver.email], mesg.as_string())
                 logger.debug("Result: '%s'", result)
                 logger.info("Emailed %s", pair.giver)
             else:
-                print(body)
+                print(mesg)
 
         if None not in [server]:
             server.quit()
+
+
+#
+##############################################################################
+#
+# handle_arguments()
+#
+def handle_arguments():
+    '''
+    Handle CLI arguments
+
+    Returns:
+        parser.Namespace: Representation of the parsed arguments
+    '''
+    #
+    # Handle CLI args
+    #
+    parser = argparse.ArgumentParser(description=HELP_MESSAGE)
+
+    # add arguments
+    parser.add_argument('-l', '--log-level', action='store', required=False,
+                        choices=["debug", "info", "warning", "error", "critical"],
+                        default=DEFAULT_LOG_LEVEL,
+                        help='Logging verbosity. Default: {}'.format(DEFAULT_LOG_LEVEL))
+
+    parser.add_argument('-f', '--fake', action='store_true', required=False, default=False)
+
+    parser.add_argument('-s', '--send', action='store_true', required=False, default=False)
+
+    return parser.parse_args()
+
+
 #
 ##############################################################################
 #
@@ -226,20 +273,7 @@ def main():
     #
     # Handle CLI args
     #
-    parser = argparse.ArgumentParser(description=HELP_MESSAGE)
-
-    # add arguments
-
-    parser.add_argument('-l', '--log-level', action='store', required=False,
-                        choices=["debug", "info", "warning", "error", "critical"],
-                        default=DEFAULT_LOG_LEVEL,
-                        help='Logging verbosity. Default: {}'.format(DEFAULT_LOG_LEVEL))
-
-    parser.add_argument('-f', '--fake', action='store_true', required=False, default=False)
-
-    parser.add_argument('-s', '--send', action='store_true', required=False, default=False)
-
-    args = parser.parse_args()
+    args = handle_arguments()
 
     # Configure logging
     logging.basicConfig(format='%(asctime)s %(levelname)s:%(name)s.%(funcName)s:%(message)s',
@@ -303,6 +337,7 @@ def main():
 
     elif args.send:
         send_emails(config=config, pairs=pairs, fake=args.fake)
+
 
 #
 ##############################################################################
