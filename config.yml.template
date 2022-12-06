@@ -3,7 +3,7 @@
 SMTP_SERVER: smtp.gmail.com
 SMTP_PORT: 587
 USERNAME: you@gmail.com
-PASSWORD: "your-password"
+PASSWORD: "your-password" # For gmail you'll need an app pass if 2-factor is enabled
 
 TIMEZONE: 'US/Eastern'
 

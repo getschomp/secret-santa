@@ -16,7 +16,7 @@ specified.
 
 ## Dependencies
 
-Python 3
+Python 3, version must be lower than 3.10
 
 Non-core dependencies:
 
